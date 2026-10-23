@@ -1,6 +1,7 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Audio,
   Easing,
   Img,
   Sequence,
@@ -11,35 +12,27 @@ import {
   useVideoConfig,
 } from "remotion";
 import { gerens } from "../../brand/gerens";
-import { Caron, type CaronDirection } from "../../brand/Caron";
+import { Caron } from "../../brand/Caron";
+import { BrandReveal } from "../../brand/BrandReveal";
 import { MaskedLine } from "../../components/MaskedLine";
+import { TIMELINE, WIPE, COMUNIKA_DURATION } from "./timeline";
 
 // Micro video: GĚRENS auspicia los Premios Comunika 2026.
 // 1920×1080, 30 fps, exactamente 30 s (900 frames). Para 4K: render con --scale=2.
-// Todo el mensaje va en pantalla, así que se entiende sin audio.
+// Todo el mensaje va en pantalla, así que se entiende sin audio; la música acompaña.
 
-export const COMUNIKA_DURATION = 900;
+export { COMUNIKA_DURATION };
 
 const { colors, fonts, logos } = gerens;
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 
-// Ancho del logo con descriptor. A 1080p ocupa ~980 px; en 4K (2×) queda casi
-// a la resolución nativa del PNG oficial (1979 px), así que no se pixela.
+// Logo de la escena de auspicio (fade simple).
 const LOGO_WIDTH = 980;
 const LOGO_HEIGHT = LOGO_WIDTH / logos.descriptorRatio;
+// Logo protagonista de las claquetas.
+const CLAQUETA_LOGO_WIDTH = 1200;
 // Espacio libre alrededor del logo (área de protección del manual, con holgura).
 const LOGO_CLEARANCE = 84;
-
-// Cada escena: inicio y duración en frames (30 frames = 1 s).
-const S1 = { from: 0, dur: 120 }; // 0:00-0:04
-const S2 = { from: 120, dur: 150 }; // 0:04-0:09
-const S3 = { from: 270, dur: 270 }; // 0:09-0:18
-const S4 = { from: 540, dur: 180 }; // 0:18-0:24
-const S5 = { from: 720, dur: 180 }; // 0:24-0:30
-
-// Las transiciones entran al inicio de cada escena; la escena anterior sigue
-// viva debajo durante esos frames para que no haya un cuadro vacío.
-const WIPE = 16;
 
 /* ---------------------------------------------------------------- recursos */
 
@@ -108,12 +101,21 @@ const useSlowPush = (duration: number, amount = 0.025) => {
 
 /* ----------------------------------------------------------------- escenas */
 
+// Claqueta de inicio: fondo celeste, logo en blanco en dos tiempos.
+const ClaquetaInicio: React.FC = () => {
+  return (
+    <AbsoluteFill style={{ background: colors.celeste, justifyContent: "center", alignItems: "center" }}>
+      <BrandReveal variant="negativo" width={CLAQUETA_LOGO_WIDTH} start={0} />
+    </AbsoluteFill>
+  );
+};
+
 // 1. Fondo blanco: el carón baja y se detiene, y aparece la frase.
 const Scene1: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const drop = spring({ frame: frame - 4, fps, config: { damping: 13, mass: 0.9, stiffness: 90 } });
-  const push = useSlowPush(S1.dur);
+  const drop = spring({ frame: frame - 10, fps, config: { damping: 13, mass: 0.9, stiffness: 90 } });
+  const push = useSlowPush(TIMELINE.s1.dur);
   const text: React.CSSProperties = {
     fontFamily: fonts.asap,
     fontWeight: 700,
@@ -126,7 +128,7 @@ const Scene1: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: colors.blanco, justifyContent: "center", alignItems: "center" }}>
       <div style={{ transform: `translateY(${(1 - drop) * -620}px)`, marginBottom: 64 }}>
-        <Caron width={170} color={colors.celeste} direction="abajo" />
+        <Caron width={150} color={colors.celeste} direction="abajo" />
       </div>
       <div style={{ transform: `scale(${push})` }}>
         <MaskedLine delay={30} style={text}>
@@ -143,11 +145,11 @@ const Scene1: React.FC = () => {
 // 2. Fondo celeste: logo en blanco con descriptor y el mensaje de auspicio.
 const Scene2: React.FC = () => {
   const frame = useCurrentFrame();
-  const drift = interpolate(frame, [0, S2.dur + WIPE], [0, 60], clamp);
+  const drift = interpolate(frame, [0, TIMELINE.s2.dur + WIPE], [0, 60], clamp);
 
   return (
     <AbsoluteFill style={{ background: colors.celeste }}>
-      {/* Carón de fondo, blanco translúcido, lejos del área del logo. */}
+      {/* Carones de fondo, blancos y translúcidos, lejos del área del logo. */}
       <div style={{ position: "absolute", right: -260, top: -170 + drift }}>
         <Caron width={760} color={colors.blanco} opacity={0.12} direction="abajo" />
       </div>
@@ -156,9 +158,9 @@ const Scene2: React.FC = () => {
       </div>
 
       <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
-        <Logo file={logos.descriptorNegativo} start={14} />
+        <Logo file={logos.descriptorNegativo} start={12} />
         <MaskedLine
-          delay={40}
+          delay={30}
           style={{
             marginTop: LOGO_CLEARANCE,
             fontFamily: fonts.asap,
@@ -175,50 +177,32 @@ const Scene2: React.FC = () => {
   );
 };
 
-// 3. Fondo blanco: los tres valores entran de a uno, cada uno con su carón.
-const VALUES: { word: string; direction: CaronDirection }[] = [
-  { word: "EXCELENCIA", direction: "arriba" },
-  { word: "CONFIANZA", direction: "derecha" },
-  { word: "INTEGRIDAD", direction: "abajo" },
-];
-const VALUE_START = 18;
-const VALUE_GAP = 72;
+// 3. Fondo blanco: los tres valores entran de a uno, con el carón apuntando a la derecha.
+const VALUES = ["EXCELENCIA", "CONFIANZA", "INTEGRIDAD"];
+export const VALUE_START = 18;
+export const VALUE_GAP = 60;
 
-const ENTRY_OFFSET: Record<CaronDirection, [number, number]> = {
-  arriba: [0, 90],
-  abajo: [0, -90],
-  derecha: [-90, 0],
-  izquierda: [90, 0],
-};
-
-const ValueRow: React.FC<{ word: string; direction: CaronDirection; start: number }> = ({
-  word,
-  direction,
-  start,
-}) => {
+const ValueRow: React.FC<{ word: string; start: number }> = ({ word, start }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const p = spring({ frame: frame - start, fps, config: { damping: 15, mass: 0.8 } });
-  const [dx, dy] = ENTRY_OFFSET[direction];
-  // Después de entrar, el carón "respira" unos píxeles en su propia dirección.
+  // El carón entra desde la izquierda (en su misma dirección) y luego "respira" unos píxeles.
   const breathe = frame > start + 30 ? Math.sin((frame - start) / 14) * 4 : 0;
-  const bx = dx === 0 ? 0 : (-Math.sign(dx) * breathe);
-  const by = dy === 0 ? 0 : (-Math.sign(dy) * breathe);
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 48 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 44 }}>
       <div
         style={{
-          width: 120,
+          width: 90,
           height: 120,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           opacity: interpolate(p, [0, 0.5], [0, 1], clamp),
-          transform: `translate(${dx * (1 - p) + bx}px, ${dy * (1 - p) + by}px)`,
+          transform: `translateX(${-110 * (1 - p) + breathe}px)`,
         }}
       >
-        <Caron width={104} color={colors.celeste} direction={direction} />
+        <Caron width={104} color={colors.celeste} direction="derecha" />
       </div>
       <div style={{ display: "flex", flexDirection: "column" }}>
         <MaskedLine
@@ -241,19 +225,12 @@ const ValueRow: React.FC<{ word: string; direction: CaronDirection; start: numbe
 };
 
 const Scene3: React.FC = () => {
-  const push = useSlowPush(S3.dur, 0.02);
+  const push = useSlowPush(TIMELINE.s3.dur, 0.02);
   return (
     <AbsoluteFill style={{ background: colors.blanco, justifyContent: "center", alignItems: "center" }}>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 52,
-          transform: `scale(${push})`,
-        }}
-      >
-        {VALUES.map((v, i) => (
-          <ValueRow key={v.word} word={v.word} direction={v.direction} start={VALUE_START + i * VALUE_GAP} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 52, transform: `scale(${push})` }}>
+        {VALUES.map((word, i) => (
+          <ValueRow key={word} word={word} start={VALUE_START + i * VALUE_GAP} />
         ))}
       </div>
     </AbsoluteFill>
@@ -263,8 +240,8 @@ const Scene3: React.FC = () => {
 // 4. Fondo azul: frase en Libre Baskerville con "coraje" subrayado.
 const Scene4: React.FC = () => {
   const frame = useCurrentFrame();
-  const push = useSlowPush(S4.dur, 0.03);
-  const drift = interpolate(frame, [0, S4.dur + WIPE], [0, 50], clamp);
+  const push = useSlowPush(TIMELINE.s4.dur, 0.03);
+  const drift = interpolate(frame, [0, TIMELINE.s4.dur + WIPE], [0, 50], clamp);
   const text: React.CSSProperties = {
     fontFamily: fonts.baskerville,
     fontWeight: 400,
@@ -292,10 +269,7 @@ const Scene4: React.FC = () => {
             en líderes con{" "}
             <span style={{ display: "inline-block", position: "relative" }}>
               coraje
-              <Underline
-                start={56}
-                style={{ position: "absolute", left: 0, right: 0, bottom: "0.04em" }}
-              />
+              <Underline start={52} style={{ position: "absolute", left: 0, right: 0, bottom: "0.04em" }} />
             </span>
             .
           </MaskedLine>
@@ -305,10 +279,17 @@ const Scene4: React.FC = () => {
   );
 };
 
-// 5. Fondo blanco: logo con descriptor, mensajes de cierre y fade out final.
-const Scene5: React.FC = () => {
+// Claqueta final: logo protagonista en dos tiempos, luego los mensajes de cierre y fade out.
+export const OUTRO_REVEAL_START = 8;
+const OUTRO_LINES_START = OUTRO_REVEAL_START + 80;
+// Fade out final corto, para que www.gerens.pe se lea más de un segundo.
+const OUTRO_FADE = 20;
+
+const ClaquetaFinal: React.FC = () => {
   const frame = useCurrentFrame();
-  const fadeOut = interpolate(frame, [S5.dur - 30, S5.dur - 2], [1, 0], {
+  const { fps } = useVideoConfig();
+  const lift = spring({ frame: frame - (OUTRO_LINES_START - 6), fps, config: { damping: 200 }, durationInFrames: 26 });
+  const fadeOut = interpolate(frame, [TIMELINE.outro.dur - 2 - OUTRO_FADE, TIMELINE.outro.dur - 2], [1, 0], {
     ...clamp,
     easing: Easing.in(Easing.quad),
   });
@@ -319,23 +300,37 @@ const Scene5: React.FC = () => {
     color: colors.grisOscuro,
     textAlign: "center",
   });
+  const logoHeight = CLAQUETA_LOGO_WIDTH / logos.descriptorRatio;
 
   return (
-    <AbsoluteFill style={{ background: colors.blanco }}>
-      <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", opacity: fadeOut }}>
-        <Logo file={logos.descriptorPositivo} start={14} />
-        <div style={{ marginTop: LOGO_CLEARANCE + 6, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <MaskedLine delay={42} style={line(62)}>
-            Felicitaciones a los premiados
-          </MaskedLine>
-          <MaskedLine delay={52} style={{ ...line(46), marginTop: 6 }}>
-            Crecemos juntos por un país mejor
-          </MaskedLine>
-          <MaskedLine delay={64} style={{ ...line(38), marginTop: 30, letterSpacing: "0.04em" }}>
-            www.gerens.pe
-          </MaskedLine>
-        </div>
+    <AbsoluteFill style={{ background: colors.blanco, opacity: fadeOut }}>
+      {/* El logo empieza al centro y sube para dar lugar a los mensajes. */}
+      <AbsoluteFill
+        style={{ justifyContent: "center", alignItems: "center", transform: `translateY(${-150 * lift}px)` }}
+      >
+        <BrandReveal variant="positivo" width={CLAQUETA_LOGO_WIDTH} start={OUTRO_REVEAL_START} />
       </AbsoluteFill>
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 540 + logoHeight / 2 - 150 + LOGO_CLEARANCE + 10,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <MaskedLine delay={OUTRO_LINES_START} style={line(62)}>
+          Felicitaciones a los premiados
+        </MaskedLine>
+        <MaskedLine delay={OUTRO_LINES_START + 8} style={{ ...line(46), marginTop: 6 }}>
+          Crecemos juntos por un país mejor
+        </MaskedLine>
+        <MaskedLine delay={OUTRO_LINES_START + 16} style={{ ...line(38), marginTop: 30, letterSpacing: "0.04em" }}>
+          www.gerens.pe
+        </MaskedLine>
+      </div>
     </AbsoluteFill>
   );
 };
@@ -343,31 +338,40 @@ const Scene5: React.FC = () => {
 /* ------------------------------------------------------------- composición */
 
 export const Comunika2026: React.FC = () => {
+  const { intro, s1, s2, s3, s4, outro } = TIMELINE;
   return (
     <AbsoluteFill style={{ background: colors.blanco }}>
-      <Sequence from={S1.from} durationInFrames={S1.dur + WIPE} name="1 · Comunicar bien">
-        <Scene1 />
+      <Sequence from={intro.from} durationInFrames={intro.dur + WIPE} name="0 · Claqueta inicio">
+        <ClaquetaInicio />
       </Sequence>
-      <Sequence from={S2.from} durationInFrames={S2.dur + WIPE} name="2 · Auspicio">
+      <Sequence from={s1.from} durationInFrames={s1.dur + WIPE} name="1 · Comunicar bien">
+        <CaronWipe band={colors.azul}>
+          <Scene1 />
+        </CaronWipe>
+      </Sequence>
+      <Sequence from={s2.from} durationInFrames={s2.dur + WIPE} name="2 · Auspicio">
         <CaronWipe band={colors.azul}>
           <Scene2 />
         </CaronWipe>
       </Sequence>
-      <Sequence from={S3.from} durationInFrames={S3.dur + WIPE} name="3 · Valores">
+      <Sequence from={s3.from} durationInFrames={s3.dur + WIPE} name="3 · Valores">
         <CaronWipe band={colors.azul}>
           <Scene3 />
         </CaronWipe>
       </Sequence>
-      <Sequence from={S4.from} durationInFrames={S4.dur + WIPE} name="4 · Coraje">
+      <Sequence from={s4.from} durationInFrames={s4.dur + WIPE} name="4 · Coraje">
         <CaronWipe band={colors.celeste}>
           <Scene4 />
         </CaronWipe>
       </Sequence>
-      <Sequence from={S5.from} durationInFrames={S5.dur} name="5 · Cierre">
+      <Sequence from={outro.from} durationInFrames={outro.dur} name="5 · Claqueta final">
         <CaronWipe band={colors.celeste}>
-          <Scene5 />
+          <ClaquetaFinal />
         </CaronWipe>
       </Sequence>
+
+      {/* Música original generada por código (scripts/music/), libre de derechos. */}
+      <Audio src={staticFile("audio/comunika-2026-musica.wav")} />
     </AbsoluteFill>
   );
 };

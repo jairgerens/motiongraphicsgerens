@@ -7,17 +7,35 @@ Cada video es un componente: lo editas, lo previsualizas en vivo en el navegador
 
 | ID | Formato | Duración | Qué es |
 | --- | --- | --- | --- |
-| `Comunika2026` | 1920×1080 (y 4K con `--scale=2`), 30 fps, H.264 | 30 s exactos | Micro video de auspicio de los Premios Comunika 2026 para proyectar en la ceremonia |
+| `Comunika2026` | 1920×1080 (y 4K con `--scale=2`), 30 fps, H.264 + AAC | 30 s exactos | Micro video de auspicio de los Premios Comunika 2026 para proyectar en la ceremonia |
 
 ```bash
 npm run render:comunika      # out/gerens-comunika-2026-1080p.mp4
 npm run render:comunika:4k   # out/gerens-comunika-2026-4k.mp4 (3840×2160)
 ```
 
+Estructura (los tiempos viven en `src/compositions/comunika/timeline.ts`):
+claqueta de inicio (logo en dos tiempos) → "Comunicar bien genera confianza" → auspicio → valores →
+"líderes con coraje" → claqueta final (logo en dos tiempos + mensajes de cierre).
+
+**Música:** pista original generada por código (`scripts/music/generate_comunika_music.py`), sin samples de
+terceros, así que es libre de derechos. Está sincronizada con la animación del logo y las transiciones.
+Si cambias los tiempos del video, vuelve a generarla:
+
+```bash
+npm run music:comunika   # requiere Python con numpy y scipy
+ffmpeg -i out/comunika-musica-raw.wav -af loudnorm=I=-14:TP=-1.5:LRA=11 -ar 48000 public/audio/comunika-2026-musica.wav
+```
+
+Para usar otra canción (por ejemplo de Pixabay Music), reemplaza `public/audio/comunika-2026-musica.wav`
+por tu archivo con el mismo nombre, o cambia la ruta del `<Audio>` en `Comunika2026.tsx`.
+
 Estas piezas siguen el Manual de Marca v1.1 (2026) y toman todo de **`src/brand/`**:
 
 - `gerens.ts`: paleta oficial (celeste #20b1e7 como color principal), tipografías Asap y Libre Baskerville, y rutas de los logos.
 - `Caron.tsx`: el carón como recurso gráfico, con la forma medida del logo oficial y limitado a las 4 direcciones que permite el manual.
+- `BrandReveal.tsx`: animación del logo en dos tiempos (primero GĚRENS con el carón cayendo sobre la Ě, luego la barra y
+  ESCUELA DE POSTGRADO). Cada parte es el mismo PNG oficial recortado por zonas, así que al final el logo queda intacto.
 - Logos en `public/gerens/`: la versión con el descriptor ESCUELA DE POSTGRADO a la derecha (manual, pág. 11), sacada de `GERENS.png`
   recortando solo el espacio transparente sobrante. La versión en blanco (`logo-descriptor-negativo.png`) es el mismo archivo con
   las formas en blanco, equivalente a la versión "negativo + descriptor" del manual (pág. 7). Si tienes el PNG oficial de esa
