@@ -1,0 +1,30 @@
+{
+  "name": "motiongraphicsgerens",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Motion graphics de GĚRENS hechos con código (Remotion)",
+  "scripts": {
+    "dev": "remotion studio",
+    "typecheck": "tsc --noEmit",
+    "still:intro": "remotion still LogoIntro out/logo-intro.png --frame=90",
+    "render:intro": "remotion render LogoIntro out/logo-intro.mp4",
+    "render:lower-third": "remotion render LowerThird out/lower-third.mov --codec=prores --prores-profile=4444 --pixel-format=yuva444p10le --image-format=png",
+    "render:reel": "remotion render VerticalReel out/reel-vertical.mp4",
+    "render:all": "npm run render:intro && npm run render:lower-third && npm run render:reel",
+    "render:lower-third:webm": "remotion render LowerThird out/lower-third.webm --codec=vp8 --pixel-format=yuva420p --image-format=png"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.2.0",
+    "@fontsource/sora": "^5.2.0",
+    "@remotion/cli": "4.0.538",
+    "@remotion/fonts": "4.0.538",
+    "@remotion/transitions": "4.0.538",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "4.0.538"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.9.0"
+  }
+}

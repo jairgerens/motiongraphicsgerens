@@ -1,0 +1,87 @@
+# Motion Graphics GĚRENS
+
+Videos de motion graphics hechos con código, usando [Remotion](https://www.remotion.dev/) (React + TypeScript).
+Cada video es un componente: lo editas, lo previsualizas en vivo en el navegador y lo exportas a MP4.
+
+## Plantillas incluidas
+
+| ID | Formato | Duración | Para qué sirve |
+| --- | --- | --- | --- |
+| `LogoIntro` | 1920×1080 (16:9) | 5 s | Intro de marca: anillos, nombre letra por letra, línea de acento y tagline |
+| `LowerThird` | 1920×1080, fondo transparente | 6 s | Cintillo de nombre y cargo para entrevistas o testimonios |
+| `VerticalReel` | 1080×1920 (9:16) | ~11 s | Reel o historia: frase gancho, lista numerada y llamado a la acción |
+
+## Cómo empezar
+
+Necesitas [Node.js](https://nodejs.org/) 18 o superior.
+
+```bash
+npm install     # instala todo (solo la primera vez)
+npm run dev     # abre Remotion Studio en el navegador
+```
+
+En **Remotion Studio** ves cada video, lo reproduces cuadro por cuadro y puedes editar los textos
+(panel de la derecha, "Props") sin tocar código.
+
+## Exportar los videos
+
+```bash
+npm run render:intro          # out/logo-intro.mp4
+npm run render:reel           # out/reel-vertical.mp4
+npm run render:lower-third    # out/lower-third.mov (ProRes 4444 con transparencia)
+npm run render:all            # los tres
+```
+
+El lower third sale en `.mov` ProRes 4444 porque conserva la transparencia y lo leen Premiere,
+Final Cut y DaVinci. Si necesitas un archivo más liviano, usa `npm run render:lower-third:webm`.
+
+Para exportar con otros textos sin tocar el código:
+
+```bash
+npx remotion render LowerThird out/ana.mov --codec=prores --prores-profile=4444 \
+  --pixel-format=yuva444p10le --image-format=png \
+  --props='{"name":"Ana Torres","role":"Directora Académica"}'
+```
+
+## Cambiar la identidad visual
+
+Todo lo de marca está en **`src/theme.ts`**: colores, tipografías, nombre, tagline y logo.
+Cambias ahí y se actualizan todos los videos.
+
+- **Logo:** copia tu archivo a `public/` (por ejemplo `public/logo.png`) y en `theme.ts`
+  cambia `logoFile: null` por `logoFile: "logo.png"`. La intro anima tu logo en vez del texto.
+- **Tipografías:** se cargan en `src/fonts.ts` desde paquetes de [Fontsource](https://fontsource.org/),
+  así que funcionan sin internet.
+
+## Estructura
+
+```
+src/
+├── index.ts              # punto de entrada
+├── Root.tsx              # registro de todos los videos (composiciones)
+├── theme.ts              # colores, fuentes y marca
+├── fonts.ts              # carga de tipografías
+├── components/
+│   ├── Background.tsx    # fondo animado con degradado
+│   └── MaskedLine.tsx    # texto que sube desde una máscara
+└── compositions/
+    ├── LogoIntro.tsx
+    ├── LowerThird.tsx
+    └── VerticalReel.tsx
+public/                   # imágenes, logos, audio y video que usen los videos
+out/                      # aquí salen los renders (no se sube a git)
+```
+
+## Crear un video nuevo
+
+1. Crea un archivo en `src/compositions/`, por ejemplo `MiVideo.tsx`, que exporte un componente React.
+2. Regístralo en `src/Root.tsx` con un `<Composition id="MiVideo" ... />`.
+3. Anímalo con `useCurrentFrame()`, `spring()` e `interpolate()` (puedes guiarte de las plantillas).
+
+Documentación de Remotion: https://www.remotion.dev/docs
+
+## Licencia de Remotion
+
+Remotion es gratis para personas, organizaciones sin fines de lucro y empresas con fines de lucro
+de hasta 3 empleados. Las empresas más grandes necesitan una licencia de empresa:
+https://www.remotion.dev/license (precios en https://remotion.pro/license).
