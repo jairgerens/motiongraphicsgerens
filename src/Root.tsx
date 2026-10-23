@@ -4,12 +4,24 @@ import { FPS } from "./theme";
 import { LogoIntro, LOGO_INTRO_DURATION } from "./compositions/LogoIntro";
 import { LowerThird, LOWER_THIRD_DURATION, type LowerThirdProps } from "./compositions/LowerThird";
 import { VerticalReel, getReelDuration, type VerticalReelProps } from "./compositions/VerticalReel";
+import { Comunika2026, COMUNIKA_DURATION } from "./compositions/comunika/Comunika2026";
 
 // Aquí se registran todos los videos. Cada <Composition> aparece en Remotion Studio
 // y se puede renderizar por su id (por ejemplo: npx remotion render LogoIntro).
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Folder name="GERENS-Institucional">
+        <Composition
+          id="Comunika2026"
+          component={Comunika2026}
+          durationInFrames={COMUNIKA_DURATION}
+          fps={FPS}
+          width={1920}
+          height={1080}
+        />
+      </Folder>
+
       <Folder name="Horizontal-16x9">
         <Composition
           id="LogoIntro"
